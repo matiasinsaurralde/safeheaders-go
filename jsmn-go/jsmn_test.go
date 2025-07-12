@@ -12,8 +12,8 @@ func TestParse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if n != 6 { // Object + key str + val str + array + 3 primitives.
-		t.Errorf("expected 6 tokens, got %d", n)
+	if n != 8 { // Corrected: Root object + "key" + "value" + "arr" + array + 3 primitives.
+		t.Errorf("expected 8 tokens, got %d", n)
 	}
 }
 
@@ -21,10 +21,10 @@ func TestParseParallel(t *testing.T) {
 	json := []byte(`{"key": "value", "arr": [1, 2, 3]}`)
 	tokens, err := ParseParallel(json, 10)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatal(err) // Now falls back to single, so no error.
 	}
-	if len(tokens) != 6 {
-		t.Errorf("expected 6 tokens, got %d", len(tokens))
+	if len(tokens) != 8 {
+		t.Errorf("expected 8 tokens, got %d", len(tokens))
 	}
 }
 

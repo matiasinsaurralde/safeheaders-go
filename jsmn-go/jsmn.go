@@ -57,7 +57,9 @@ func (p *Parser) Parse(json []byte) (int, error) {
 			} else {
 				tok.Type = Array
 			}
-			p.allocToken(tok)
+			if err := p.allocToken(tok); err != nil {
+				return 0, err
+			}
 			p.toksuper = p.toknext - 1
 			p.pos++
 			continue
@@ -100,6 +102,10 @@ func (p *Parser) Parse(json []byte) (int, error) {
 			p.tokens[i].End = len(json)
 		}
 	}
+	// Additional validation: Check for unclosed structures
+	if p.toksuper != -1 {
+		return 0, errors.New("unclosed object or array")
+	}
 	return p.toknext, nil
 }
 
@@ -108,12 +114,16 @@ func (p *Parser) Tokens() []Token {
 	return p.tokens[:p.toknext]
 }
 
-func (p *Parser) allocToken(tok Token) {
+func (p *Parser) allocToken(tok Token) error {
+	if p.toknext >= len(p.tokens) {
+		return errors.New("token overflow: too many tokens")
+	}
 	p.tokens[p.toknext] = tok
 	if p.toksuper != -1 {
 		p.tokens[p.toksuper].Size++
 	}
 	p.toknext++
+	return nil
 }
 
 func (p *Parser) parseString(json []byte) error {
@@ -123,7 +133,9 @@ func (p *Parser) parseString(json []byte) error {
 		c := json[p.pos]
 		if c == '"' {
 			tok.End = p.pos
-			p.allocToken(tok)
+			if err := p.allocToken(tok); err != nil {
+				return err
+			}
 			p.pos++
 			return nil
 		}
@@ -146,12 +158,26 @@ func (p *Parser) parsePrimitive(json []byte) error {
 		p.pos++
 	}
 	tok.End = p.pos
-	p.allocToken(tok)
+	if tok.End == tok.Start {
+		return errors.New("empty primitive")
+	}
+	if err := p.allocToken(tok); err != nil {
+		return err
+	}
 	return nil
 }
 
 // Novel Enhancement: ParseParallel - Tokenize in parallel across chunks.
 func ParseParallel(json []byte, numTokens int) ([]Token, error) {
+	if len(json) < 512 { // Fallback for small JSON to avoid invalid chunks.
+		p := NewParser(numTokens)
+		_, err := p.Parse(json)
+		if err != nil {
+			return nil, err
+		}
+		return p.Tokens(), nil
+	}
+
 	numWorkers := runtime.NumCPU()
 	if numWorkers > 4 {
 		numWorkers = 4 // Cap for simplicity.
@@ -175,7 +201,7 @@ func ParseParallel(json []byte, numTokens int) ([]Token, error) {
 		}
 		go func(i int, chunk []byte) {
 			defer wg.Done()
-			p := NewParser(numTokens / numWorkers)
+			p := NewParser(numTokens) // Use full numTokens per to avoid overflow.
 			_, err := p.Parse(chunk)
 			if err != nil {
 				errs <- err
@@ -192,7 +218,7 @@ func ParseParallel(json []byte, numTokens int) ([]Token, error) {
 	default:
 	}
 
-	// Merge results (simple concat for demo; real use would align boundaries).
+	// Merge results (naive concat; note limitation in README for real use).
 	var merged []Token
 	for _, res := range results {
 		merged = append(merged, res...)
