@@ -2,16 +2,19 @@
 
 A collection of idiomatic Go ports of popular single-header C libraries, enhanced with Go's concurrency and safety features. These ports eliminate C's raw pointer risks using Go's slices and bounds checking, while adding novel twists like parallel processing for high-throughput scenarios.
 
-## Why?
+### Why?
 - **Safety**: No buffer overflows or undefined behavior.
 - **Performance**: Leverage goroutines for concurrency, e.g., parallel tokenizing.
 - **Simplicity**: Drop-in packages for embedded, web, or edge apps.
 - **Novelty**: Go-specific features like streaming I/O for real-time data (e.g., IoT JSON streams).
 
-## Current Ports
+### Current Ports
 - [jsmn-go](./jsmn-go): Lightweight JSON tokenizer with parallel and streaming support.
 
-## Usage Example (jsmn-go)
+### Usage Example (jsmn-go)
+
+#### Limitations
+- Parallel chunking in jsmn-go is naive (simple splits); best for large arrays/objects. May misalign on boundaries—PR improvements welcome (e.g., smart chunk finding)!
 
 ```go
 package main
