@@ -11,10 +11,10 @@ A collection of idiomatic Go ports of popular single-header C libraries, enhance
 ### Current Ports
 - [jsmn-go](./jsmn-go): Lightweight JSON tokenizer with parallel and streaming support.
 
-### Usage Example (jsmn-go)
-
-#### Limitations
+### Limitations
 - Parallel chunking in jsmn-go is naive (simple splits); best for large arrays/objects. May misalign on boundaries—PR improvements welcome (e.g., smart chunk finding)!
+
+### Usage Example (jsmn-go)
 
 ```go
 package main
