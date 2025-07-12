@@ -80,7 +80,6 @@ func (p *Parser) Parse(json []byte) (int, error) {
 			p.pos++
 			continue
 		case ':':
-			p.toksuper = p.toknext - 1
 			p.pos++
 			continue
 		case ',':
