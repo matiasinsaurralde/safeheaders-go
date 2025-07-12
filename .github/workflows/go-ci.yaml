@@ -25,10 +25,13 @@ jobs:
           restore-keys: ${{ runner.os }}-go-
 
       - name: Install dependencies
+        working-directory: jsmn-go  # Run in subfolder with go.mod.
         run: go mod tidy
 
       - name: Test
-        run: go test ./jsmn-go -v  # Run in subfolder; add more like ./other-go as needed.
+        working-directory: jsmn-go
+        run: go test -v
 
       - name: Benchmark
-        run: go test -bench . ./jsmn-go
+        working-directory: jsmn-go
+        run: go test -bench .
